@@ -1,46 +1,120 @@
 /**
- * Components.js - Interactive UI Components
- * 군대 관리 시스템용 컴포넌트들
+ * MILBASE Components
+ * 재사용 가능한 UI 컴포넌트들
  */
 
-// 네비게이션 컴포넌트
-class Navigation {
+// === Toast 알림 시스템 ===
+class Toast {
     constructor() {
-        this.nav = $('#navigation');
-        this.menuBtn = $('.menu-btn');
+        this.container = Utils.$('#toastContainer');
+        this.toasts = [];
+    }
+    
+    show(message, type = 'info', duration = 5000) {
+        const toast = this.create(message, type);
+        this.container.appendChild(toast);
+        this.toasts.push(toast);
+        
+        // 애니메이션 트리거
+        requestAnimationFrame(() => {
+            Utils.slideUp(toast);
+        });
+        
+        // 자동 제거
+        if (duration > 0) {
+            setTimeout(() => {
+                this.remove(toast);
+            }, duration);
+        }
+        
+        return toast;
+    }
+    
+    create(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const icons = {
+            info: 'ℹ️',
+            success: '✅',
+            warning: '⚠️',
+            error: '❌'
+        };
+        
+        const titles = {
+            info: '알림',
+            success: '성공',
+            warning: '주의',
+            error: '오류'
+        };
+        
+        toast.innerHTML = `
+            <div class="toast-icon">${icons[type] || icons.info}</div>
+            <div class="toast-content">
+                <div class="toast-title">${titles[type] || titles.info}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" type="button">×</button>
+        `;
+        
+        // 닫기 버튼 이벤트
+        const closeBtn = toast.querySelector('.toast-close');
+        Utils.on(closeBtn, 'click', () => this.remove(toast));
+        
+        return toast;
+    }
+    
+    remove(toast) {
+        if (!toast.parentNode) return;
+        
+        Utils.addClass(toast, 'removing');
+        
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+            
+            const index = this.toasts.indexOf(toast);
+            if (index > -1) {
+                this.toasts.splice(index, 1);
+            }
+        }, 300);
+    }
+    
+    clear() {
+        this.toasts.forEach(toast => this.remove(toast));
+    }
+}
+
+// === 사이드 메뉴 컴포넌트 ===
+class SideMenu {
+    constructor() {
+        this.menu = Utils.$('#sideMenu');
+        this.overlay = Utils.$('#overlay');
+        this.toggleBtn = Utils.$('#menuToggle');
+        this.closeBtn = Utils.$('#menuClose');
+        this.hamburger = this.toggleBtn?.querySelector('.hamburger');
         this.isOpen = false;
+        
         this.init();
     }
     
     init() {
-        this.bindEvents();
-        this.logger.info('Navigation component initialized');
-    }
-    
-    bindEvents() {
-        // 메뉴 버튼 클릭
-        Utils.on(this.menuBtn, 'click', (e) => {
-            e.preventDefault();
-            this.toggle();
-        });
+        if (this.toggleBtn) {
+            Utils.on(this.toggleBtn, 'click', () => this.toggle());
+        }
         
-        // 네비게이션 링크 클릭
-        Utils.on(this.nav, 'click', (e) => {
-            if (e.target.tagName === 'A') {
-                this.close();
-            }
-        });
+        if (this.closeBtn) {
+            Utils.on(this.closeBtn, 'click', () => this.close());
+        }
+        
+        if (this.overlay) {
+            Utils.on(this.overlay, 'click', () => this.close());
+        }
         
         // ESC 키로 닫기
         Utils.on(document, 'keydown', (e) => {
             if (e.key === 'Escape' && this.isOpen) {
-                this.close();
-            }
-        });
-        
-        // 외부 클릭으로 닫기
-        Utils.on(document, 'click', (e) => {
-            if (this.isOpen && !this.nav.contains(e.target) && !this.menuBtn.contains(e.target)) {
                 this.close();
             }
         });
@@ -49,123 +123,194 @@ class Navigation {
     open() {
         if (this.isOpen) return;
         
-        Utils.addClass(this.nav, 'active');
-        Utils.addClass(document.body, 'nav-open');
         this.isOpen = true;
+        Utils.addClass(this.menu, 'active');
+        Utils.addClass(this.overlay, 'active');
+        Utils.addClass(this.hamburger, 'active');
         
-        // 포커스 트랩 설정
-        this.setFocusTrap();
+        // 포커스 트랩
+        this.trapFocus();
         
-        this.logger.info('Navigation opened');
+        // body 스크롤 방지
+        document.body.style.overflow = 'hidden';
     }
     
     close() {
         if (!this.isOpen) return;
         
-        Utils.removeClass(this.nav, 'active');
-        Utils.removeClass(document.body, 'nav-open');
         this.isOpen = false;
+        Utils.removeClass(this.menu, 'active');
+        Utils.removeClass(this.overlay, 'active');
+        Utils.removeClass(this.hamburger, 'active');
         
-        // 포커스 트랩 제거
-        this.removeFocusTrap();
+        // body 스크롤 복원
+        document.body.style.overflow = '';
         
-        // 메뉴 버튼으로 포커스 복원
-        this.menuBtn.focus();
-        
-        this.logger.info('Navigation closed');
-    }
-    
-    toggle() {
-        this.isOpen ? this.close() : this.open();
-    }
-    
-    setFocusTrap() {
-        const focusableElements = this.nav.querySelectorAll(
-            'a[href], button, textarea, input[type="text"], input[type="radio"], input[type="checkbox"], select'
-        );
-        
-        if (focusableElements.length === 0) return;
-        
-        this.firstFocusableElement = focusableElements[0];
-        this.lastFocusableElement = focusableElements[focusableElements.length - 1];
-        
-        Utils.on(this.nav, 'keydown', this.handleFocusTrap.bind(this));
-        
-        // 첫 번째 요소로 포커스
-        this.firstFocusableElement.focus();
-    }
-    
-    removeFocusTrap() {
-        Utils.on(this.nav, 'keydown', this.handleFocusTrap.bind(this));
-    }
-    
-    handleFocusTrap(e) {
-        if (e.key !== 'Tab') return;
-        
-        if (e.shiftKey) {
-            if (document.activeElement === this.firstFocusableElement) {
-                e.preventDefault();
-                this.lastFocusableElement.focus();
-            }
-        } else {
-            if (document.activeElement === this.lastFocusableElement) {
-                e.preventDefault();
-                this.firstFocusableElement.focus();
-            }
+        // 포커스 복원
+        if (this.toggleBtn) {
+            this.toggleBtn.focus();
         }
     }
     
-    get logger() {
-        return Utils.logger;
+    toggle() {
+        if (this.isOpen) {
+            this.close();
+        } else {
+            this.open();
+        }
+    }
+    
+    trapFocus() {
+        const focusableElements = this.menu.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        
+        Utils.on(this.menu, 'keydown', (e) => {
+            if (e.key !== 'Tab') return;
+            
+            if (e.shiftKey) {
+                if (document.activeElement === firstElement) {
+                    e.preventDefault();
+                    lastElement.focus();
+                }
+            } else {
+                if (document.activeElement === lastElement) {
+                    e.preventDefault();
+                    firstElement.focus();
+                }
+            }
+        });
+        
+        // 첫 번째 요소에 포커스
+        if (firstElement) {
+            firstElement.focus();
+        }
     }
 }
 
-// 버튼 컴포넌트
-class Button {
-    constructor(element) {
-        this.element = element;
+// === 테마 토글 컴포넌트 ===
+class ThemeToggle {
+    constructor() {
+        this.toggleBtn = Utils.$('#themeToggle');
+        this.currentTheme = Utils.storage.get('theme', 'dark');
+        
         this.init();
     }
     
     init() {
-        this.bindEvents();
-        this.setupLoadingState();
-    }
-    
-    bindEvents() {
-        Utils.on(this.element, 'click', this.handleClick.bind(this));
-        Utils.on(this.element, 'keydown', this.handleKeydown.bind(this));
-    }
-    
-    handleClick(e) {
-        if (this.isDisabled()) {
-            e.preventDefault();
-            return;
-        }
+        this.applyTheme(this.currentTheme);
         
-        // 클릭 효과
-        this.addRippleEffect(e);
-        
-        // 커스텀 이벤트 발생
-        this.element.dispatchEvent(new CustomEvent('buttonClick', {
-            detail: { button: this }
-        }));
-    }
-    
-    handleKeydown(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            this.element.click();
+        if (this.toggleBtn) {
+            Utils.on(this.toggleBtn, 'click', () => this.toggle());
         }
     }
     
-    addRippleEffect(e) {
-        const ripple = document.createElement('span');
-        const rect = this.element.getBoundingClientRect();
+    toggle() {
+        const newTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+        this.setTheme(newTheme);
+    }
+    
+    setTheme(theme) {
+        this.currentTheme = theme;
+        this.applyTheme(theme);
+        Utils.storage.set('theme', theme);
+    }
+    
+    applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        if (this.toggleBtn) {
+            const icon = this.toggleBtn.querySelector('.icon');
+            if (icon) {
+                icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+            }
+        }
+    }
+}
+
+// === 실시간 시계 컴포넌트 ===
+class Clock {
+    constructor() {
+        this.element = Utils.$('#currentTime');
+        this.interval = null;
+        
+        this.init();
+    }
+    
+    init() {
+        if (!this.element) return;
+        
+        this.update();
+        this.interval = setInterval(() => this.update(), 1000);
+    }
+    
+    update() {
+        const now = new Date();
+        const timeString = Utils.formatTime(now);
+        const dateString = Utils.formatDate(now);
+        
+        this.element.textContent = `${dateString} ${timeString}`;
+    }
+    
+    destroy() {
+        if (this.interval) {
+            clearInterval(this.interval);
+            this.interval = null;
+        }
+    }
+}
+
+// === 진행률 바 컴포넌트 ===
+class ProgressBar {
+    constructor(element) {
+        this.element = typeof element === 'string' ? Utils.$(element) : element;
+        this.fill = this.element?.querySelector('.progress-fill');
+        this.currentValue = 0;
+    }
+    
+    setValue(value, animate = true) {
+        value = Utils.clamp(value, 0, 100);
+        this.currentValue = value;
+        
+        if (!this.fill) return;
+        
+        if (animate) {
+            // 부드러운 애니메이션
+            this.fill.style.transition = 'width 1s ease-out';
+        } else {
+            this.fill.style.transition = 'none';
+        }
+        
+        this.fill.style.width = `${value}%`;
+    }
+    
+    getValue() {
+        return this.currentValue;
+    }
+}
+
+// === 버튼 리플 효과 컴포넌트 ===
+class RippleEffect {
+    static init() {
+        // 모든 버튼에 리플 효과 추가
+        Utils.on(document, 'click', (e) => {
+            const button = e.target.closest('.action-btn, .btn-icon');
+            if (button) {
+                RippleEffect.create(button, e);
+            }
+        });
+    }
+    
+    static create(element, event) {
+        const rect = element.getBoundingClientRect();
         const size = Math.max(rect.width, rect.height);
-        const x = e.clientX - rect.left - size / 2;
-        const y = e.clientY - rect.top - size / 2;
+        const x = event.clientX - rect.left - size / 2;
+        const y = event.clientY - rect.top - size / 2;
         
+        const ripple = document.createElement('div');
         ripple.style.cssText = `
             position: absolute;
             width: ${size}px;
@@ -175,277 +320,100 @@ class Button {
             background: rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             transform: scale(0);
-            animation: ripple 0.6s linear;
+            animation: ripple 0.6s ease-out;
             pointer-events: none;
         `;
         
-        this.element.style.position = 'relative';
-        this.element.appendChild(ripple);
+        element.style.position = 'relative';
+        element.style.overflow = 'hidden';
+        element.appendChild(ripple);
         
         setTimeout(() => {
-            ripple.remove();
+            if (ripple.parentNode) {
+                ripple.parentNode.removeChild(ripple);
+            }
         }, 600);
     }
-    
-    setupLoadingState() {
-        // 로딩 상태 CSS 추가
-        if (!document.querySelector('#button-styles')) {
-            const style = document.createElement('style');
-            style.id = 'button-styles';
-            style.textContent = `
-                @keyframes ripple {
-                    to {
-                        transform: scale(4);
-                        opacity: 0;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-    }
-    
-    setLoading(loading) {
-        if (loading) {
-            Utils.addClass(this.element, 'loading');
-            this.element.disabled = true;
-        } else {
-            Utils.removeClass(this.element, 'loading');
-            this.element.disabled = false;
-        }
-    }
-    
-    isDisabled() {
-        return this.element.disabled || Utils.hasClass(this.element, 'loading');
-    }
 }
 
-// 카드 컴포넌트
-class Card {
-    constructor(element) {
-        this.element = element;
+// === 키보드 단축키 관리자 ===
+class KeyboardShortcuts {
+    constructor() {
+        this.shortcuts = new Map();
         this.init();
     }
     
     init() {
-        this.bindEvents();
-        this.setupIntersectionObserver();
-    }
-    
-    bindEvents() {
-        // 카드 클릭 이벤트
-        Utils.on(this.element, 'click', this.handleClick.bind(this));
+        Utils.on(document, 'keydown', (e) => this.handleKeydown(e));
         
-        // 키보드 이벤트
-        Utils.on(this.element, 'keydown', this.handleKeydown.bind(this));
-    }
-    
-    handleClick(e) {
-        // 링크가 있는 경우 기본 동작 유지
-        if (e.target.tagName === 'A' || e.target.closest('a')) {
-            return;
-        }
-        
-        // 카드 클릭 이벤트 발생
-        this.element.dispatchEvent(new CustomEvent('cardClick', {
-            detail: { card: this, event: e }
-        }));
-    }
-    
-    handleKeydown(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            this.element.click();
-        }
-    }
-    
-    setupIntersectionObserver() {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        Utils.addClass(entry.target, 'card-visible');
-                    }
-                });
-            },
-            { threshold: 0.1 }
-        );
-        
-        observer.observe(this.element);
-    }
-    
-    animateIn() {
-        return Utils.animate(this.element, {
-            opacity: 1,
-            transform: 'translateY(0)'
-        }, 600, 'ease-out');
-    }
-    
-    animateOut() {
-        return Utils.animate(this.element, {
-            opacity: 0,
-            transform: 'translateY(20px)'
-        }, 300, 'ease-in');
-    }
-}
-
-// 언어 선택기 컴포넌트
-class LanguageSelector {
-    constructor(element) {
-        this.element = element;
-        this.currentLang = 'KO';
-        this.init();
-    }
-    
-    init() {
-        this.bindEvents();
-        this.loadSavedLanguage();
-    }
-    
-    bindEvents() {
-        const langSpans = this.element.querySelectorAll('span:not(.separator)');
-        
-        langSpans.forEach(span => {
-            Utils.on(span, 'click', () => {
-                this.setLanguage(span.textContent);
-            });
-        });
-    }
-    
-    setLanguage(lang) {
-        this.currentLang = lang;
-        
-        // 활성 상태 업데이트
-        const langSpans = this.element.querySelectorAll('span:not(.separator)');
-        langSpans.forEach(span => {
-            if (span.textContent === lang) {
-                Utils.addClass(span, 'active');
-            } else {
-                Utils.removeClass(span, 'active');
+        // 기본 단축키 등록
+        this.register('Escape', () => {
+            // 사이드 메뉴나 모달 닫기
+            if (window.sideMenu?.isOpen) {
+                window.sideMenu.close();
             }
         });
         
-        // 로컬 스토리지에 저장
-        Utils.storage.set('language', lang);
-        
-        // 언어 변경 이벤트 발생
-        document.dispatchEvent(new CustomEvent('languageChange', {
-            detail: { language: lang }
-        }));
-        
-        Utils.logger.info(`Language changed to: ${lang}`);
+        this.register('KeyM', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                window.sideMenu?.toggle();
+            }
+        });
     }
     
-    loadSavedLanguage() {
-        const savedLang = Utils.storage.get('language', 'KO');
-        this.setLanguage(savedLang);
+    register(key, callback, options = {}) {
+        this.shortcuts.set(key, { callback, options });
     }
     
-    getCurrentLanguage() {
-        return this.currentLang;
-    }
-}
-
-// 헤더 컴포넌트
-class Header {
-    constructor() {
-        this.header = $('.header');
-        this.lastScrollY = 0;
-        this.init();
+    unregister(key) {
+        this.shortcuts.delete(key);
     }
     
-    init() {
-        this.bindEvents();
-        this.setupScrollEffect();
-    }
-    
-    bindEvents() {
-        // 스크롤 이벤트
-        Utils.on(window, 'scroll', Utils.throttle(this.handleScroll.bind(this), 16));
-        
-        // 리사이즈 이벤트
-        Utils.on(window, 'resize', Utils.debounce(this.handleResize.bind(this), 250));
-    }
-    
-    handleScroll() {
-        const currentScrollY = Utils.getScrollPosition().y;
-        
-        // 헤더 숨김/표시 효과
-        if (currentScrollY > this.lastScrollY && currentScrollY > 100) {
-            Utils.addClass(this.header, 'header-hidden');
-        } else {
-            Utils.removeClass(this.header, 'header-hidden');
-        }
-        
-        // 스크롤 배경 효과
-        if (currentScrollY > 50) {
-            Utils.addClass(this.header, 'header-scrolled');
-        } else {
-            Utils.removeClass(this.header, 'header-scrolled');
-        }
-        
-        this.lastScrollY = currentScrollY;
-    }
-    
-    handleResize() {
-        // 모바일에서 네비게이션이 열려있으면 닫기
-        if (Utils.isMobile() && window.Navigation && window.Navigation.isOpen) {
-            window.Navigation.close();
-        }
-    }
-    
-    setupScrollEffect() {
-        // 헤더 스크롤 효과 CSS 추가
-        if (!document.querySelector('#header-styles')) {
-            const style = document.createElement('style');
-            style.id = 'header-styles';
-            style.textContent = `
-                .header {
-                    transform: translateY(0);
-                    transition: transform 0.3s ease;
-                }
-                
-                .header-hidden {
-                    transform: translateY(-100%);
-                }
-                
-                .header-scrolled {
-                    background: rgba(26, 31, 46, 0.98);
-                    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-                }
-            `;
-            document.head.appendChild(style);
+    handleKeydown(e) {
+        const shortcut = this.shortcuts.get(e.code || e.key);
+        if (shortcut) {
+            const { callback, options } = shortcut;
+            
+            // 수정키 확인
+            if (options.ctrl && !e.ctrlKey) return;
+            if (options.shift && !e.shiftKey) return;
+            if (options.alt && !e.altKey) return;
+            if (options.meta && !e.metaKey) return;
+            
+            callback(e);
         }
     }
 }
 
-// 컴포넌트 초기화 함수
-function initializeComponents() {
-    // 네비게이션 초기화
-    window.Navigation = new Navigation();
-    
-    // 헤더 초기화
-    window.Header = new Header();
-    
-    // 버튼 컴포넌트 초기화
-    const buttons = Utils.$$('.btn-primary, button[type="button"]');
-    buttons.forEach(button => new Button(button));
-    
-    // 카드 컴포넌트 초기화
-    const cards = Utils.$$('.info-card');
-    cards.forEach(card => new Card(card));
-    
-    // 언어 선택기 초기화
-    const languageSelector = Utils.$('.language-selector');
-    if (languageSelector) {
-        window.LanguageSelector = new LanguageSelector(languageSelector);
-    }
-    
-    Utils.logger.info('All components initialized');
-}
+// === 전역 컴포넌트 초기화 ===
+let toast, sideMenu, themeToggle, clock, keyboardShortcuts;
 
-// DOM 로드 완료 시 컴포넌트 초기화
+const initComponents = () => {
+    // 컴포넌트 인스턴스 생성
+    toast = new Toast();
+    sideMenu = new SideMenu();
+    themeToggle = new ThemeToggle();
+    clock = new Clock();
+    keyboardShortcuts = new KeyboardShortcuts();
+    
+    // 리플 효과 초기화
+    RippleEffect.init();
+    
+    // 전역 객체로 노출
+    window.toast = toast;
+    window.sideMenu = sideMenu;
+    window.themeToggle = themeToggle;
+    window.clock = clock;
+    window.keyboardShortcuts = keyboardShortcuts;
+    window.ProgressBar = ProgressBar;
+    
+    console.log('🎖️ MILBASE Components initialized');
+};
+
+// DOM 로드 완료 시 초기화
 if (document.readyState === 'loading') {
-    Utils.on(document, 'DOMContentLoaded', initializeComponents);
+    Utils.on(document, 'DOMContentLoaded', initComponents);
 } else {
-    initializeComponents();
+    initComponents();
 }

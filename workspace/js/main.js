@@ -1,515 +1,478 @@
 /**
  * Main.js - Application Entry Point
- * 군대 관리 시스템 메인 애플리케이션
+ * 군대 개인 대시보드 메인 애플리케이션
  */
 
-class MilitaryManagementApp {
+class MilitaryDashboardApp {
     constructor() {
-        this.isInitialized = false;
-        this.currentPage = 'home';
-        this.appData = {
-            user: null,
-            settings: {},
-            notifications: []
+        this.currentLanguage = 'ko';
+        this.userData = {
+            name: '군인',
+            enlistmentDate: null,
+            serviceType: '육군', // 육군, 해군, 공군, 해병대
+            rank: '이병',
+            unit: '',
+            contact: ''
         };
-        this.init();
+        this.appData = {
+            memos: [],
+            schedules: [],
+            tips: [],
+            lastUpdated: new Date().toISOString()
+        };
+        this.translations = {
+            ko: {
+                welcome: '안녕하세요, {name}님!',
+                serviceDays: '복무 일수',
+                daysToDischarge: '전역까지',
+                serviceProgress: '복무 진행률',
+                days: '일',
+                percent: '%',
+                quickActions: '빠른 실행',
+                dischargeCheck: '전역일 확인',
+                writeMemo: '메모 작성',
+                addSchedule: '일정 추가',
+                offlineMode: '오프라인 모드',
+                onlineMode: '온라인 모드'
+            },
+            en: {
+                welcome: 'Hello, {name}!',
+                serviceDays: 'Service Days',
+                daysToDischarge: 'Days to Discharge',
+                serviceProgress: 'Service Progress',
+                days: 'days',
+                percent: '%',
+                quickActions: 'Quick Actions',
+                dischargeCheck: 'Check Discharge Date',
+                writeMemo: 'Write Memo',
+                addSchedule: 'Add Schedule',
+                offlineMode: 'Offline Mode',
+                onlineMode: 'Online Mode'
+            }
+        };
     }
-    
+
     init() {
-        if (this.isInitialized) return;
-        
-        this.setupEventListeners();
+        this.loadUserData();
         this.loadAppData();
-        this.initializeAnimations();
+        this.setupEventListeners();
+        this.updateDashboard();
+        this.startClock();
         this.setupServiceWorker();
+        this.checkOnlineStatus();
         
-        this.isInitialized = true;
-        Utils.logger.info('Military Management App initialized');
+        // 컴포넌트 초기화
+        if (typeof initializeComponents === 'function') {
+            initializeComponents();
+        }
+        
+        console.log('군대 개인 대시보드가 초기화되었습니다.');
     }
-    
+
     setupEventListeners() {
-        // 페이지 로드 완료
-        Utils.on(window, 'load', this.handlePageLoad.bind(this));
-        
-        // 언어 변경 이벤트
-        Utils.on(document, 'languageChange', this.handleLanguageChange.bind(this));
-        
-        // 버튼 클릭 이벤트
-        Utils.on(document, 'buttonClick', this.handleButtonClick.bind(this));
-        
-        // 카드 클릭 이벤트
-        Utils.on(document, 'cardClick', this.handleCardClick.bind(this));
-        
+        // 페이지 로드
+        document.addEventListener('DOMContentLoaded', () => {
+            this.updateDashboard();
+        });
+
+        // 언어 변경
+        const languageSelector = document.getElementById('languageSelector');
+        if (languageSelector) {
+            languageSelector.addEventListener('click', (e) => {
+                if (e.target.classList.contains('lang-btn')) {
+                    this.changeLanguage(e.target.dataset.lang);
+                }
+            });
+        }
+
+        // 메뉴 버튼
+        const menuBtn = document.getElementById('menuBtn');
+        const navClose = document.getElementById('navClose');
+        const navigation = document.getElementById('navigation');
+
+        if (menuBtn) {
+            menuBtn.addEventListener('click', () => {
+                navigation.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        }
+
+        if (navClose) {
+            navClose.addEventListener('click', () => {
+                navigation.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        }
+
+        // 기능 카드 클릭
+        const featureCards = document.querySelectorAll('.feature-card');
+        featureCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                const page = card.dataset.page;
+                this.navigateToPage(page);
+            });
+        });
+
+        // 빠른 실행 버튼
+        const quickDischargeBtn = document.getElementById('quickDischargeBtn');
+        const quickMemoBtn = document.getElementById('quickMemoBtn');
+        const quickScheduleBtn = document.getElementById('quickScheduleBtn');
+
+        if (quickDischargeBtn) {
+            quickDischargeBtn.addEventListener('click', () => {
+                this.showDischargeCalculator();
+            });
+        }
+
+        if (quickMemoBtn) {
+            quickMemoBtn.addEventListener('click', () => {
+                this.showMemoEditor();
+            });
+        }
+
+        if (quickScheduleBtn) {
+            quickScheduleBtn.addEventListener('click', () => {
+                this.showScheduleEditor();
+            });
+        }
+
         // 키보드 단축키
-        Utils.on(document, 'keydown', this.handleKeyboardShortcuts.bind(this));
-        
+        document.addEventListener('keydown', (e) => {
+            this.handleKeyboardShortcuts(e);
+        });
+
         // 온라인/오프라인 상태 변경
-        Utils.on(window, 'online', this.handleOnlineStatus.bind(this));
-        Utils.on(window, 'offline', this.handleOfflineStatus.bind(this));
-        
+        window.addEventListener('online', () => {
+            this.updateOnlineStatus(true);
+        });
+
+        window.addEventListener('offline', () => {
+            this.updateOnlineStatus(false);
+        });
+
         // 페이지 가시성 변경
-        Utils.on(document, 'visibilitychange', this.handleVisibilityChange.bind(this));
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                this.updateDashboard();
+            }
+        });
     }
-    
-    handlePageLoad() {
-        this.showWelcomeMessage();
-        this.checkForUpdates();
-        this.initializeOfflineCapabilities();
+
+    updateDashboard() {
+        this.updateWelcomeMessage();
+        this.updateStatistics();
+        this.updateCurrentTime();
     }
-    
-    handleLanguageChange(event) {
-        const { language } = event.detail;
-        this.updatePageLanguage(language);
-        this.saveUserPreference('language', language);
-    }
-    
-    handleButtonClick(event) {
-        const { button } = event.detail;
-        const buttonText = button.element.textContent.trim();
-        
-        switch (buttonText) {
-            case '신고하기':
-                this.handleReportButton();
-                break;
-            default:
-                Utils.logger.info(`Button clicked: ${buttonText}`);
+
+    updateWelcomeMessage() {
+        const userName = document.getElementById('userName');
+        if (userName) {
+            const translation = this.translations[this.currentLanguage].welcome;
+            userName.textContent = this.userData.name;
         }
     }
-    
-    handleCardClick(event) {
-        const { card } = event.detail;
-        const cardType = this.getCardType(card.element);
+
+    updateStatistics() {
+        if (!this.userData.enlistmentDate) {
+            this.showNotification('입대일을 설정해주세요.', 'info');
+            return;
+        }
+
+        const enlistmentDate = new Date(this.userData.enlistmentDate);
+        const today = new Date();
+        const serviceDays = Math.floor((today - enlistmentDate) / (1000 * 60 * 60 * 24));
         
-        switch (cardType) {
-            case 'news':
-                this.handleNewsCardClick(card);
-                break;
-            case 'action':
-                this.handleActionCardClick(card);
-                break;
-            default:
-                Utils.logger.info(`Card clicked: ${cardType}`);
+        // 전역일 계산 (육군 기준 18개월)
+        const dischargeDate = new Date(enlistmentDate);
+        dischargeDate.setMonth(dischargeDate.getMonth() + 18);
+        
+        const daysToDischarge = Math.ceil((dischargeDate - today) / (1000 * 60 * 60 * 24));
+        const totalServiceDays = Math.ceil((dischargeDate - enlistmentDate) / (1000 * 60 * 60 * 24));
+        const serviceProgress = Math.round((serviceDays / totalServiceDays) * 100);
+
+        // 통계 업데이트
+        const serviceDaysEl = document.getElementById('serviceDays');
+        const daysToDischargeEl = document.getElementById('daysToDischarge');
+        const serviceProgressEl = document.getElementById('serviceProgress');
+
+        if (serviceDaysEl) {
+            serviceDaysEl.textContent = `${serviceDays}일`;
+        }
+        if (daysToDischargeEl) {
+            daysToDischargeEl.textContent = `${daysToDischarge}일`;
+        }
+        if (serviceProgressEl) {
+            serviceProgressEl.textContent = `${serviceProgress}%`;
         }
     }
-    
-    handleKeyboardShortcuts(event) {
+
+    updateCurrentTime() {
+        const currentTimeEl = document.getElementById('currentTime');
+        if (currentTimeEl) {
+            const now = new Date();
+            const timeString = now.toLocaleString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            currentTimeEl.textContent = timeString;
+        }
+    }
+
+    startClock() {
+        setInterval(() => {
+            this.updateCurrentTime();
+        }, 1000);
+    }
+
+    changeLanguage(lang) {
+        this.currentLanguage = lang;
+        
+        // 언어 버튼 상태 업데이트
+        const langBtns = document.querySelectorAll('.lang-btn');
+        langBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.lang === lang);
+        });
+
+        // 페이지 번역
+        this.translatePage();
+        
+        // 로컬 스토리지에 저장
+        Utils.storage.set('language', lang);
+        
+        this.showNotification(`언어가 ${lang === 'ko' ? '한국어' : 'English'}로 변경되었습니다.`, 'success');
+    }
+
+    translatePage() {
+        const elements = document.querySelectorAll('[data-translate]');
+        elements.forEach(element => {
+            const key = element.dataset.translate;
+            const translation = this.translations[this.currentLanguage][key];
+            if (translation) {
+                element.textContent = translation;
+            }
+        });
+    }
+
+    navigateToPage(page) {
+        // 실제 페이지로 이동하는 대신 모달이나 새 섹션으로 표시
+        switch (page) {
+            case 'discharge-calculator':
+                this.showDischargeCalculator();
+                break;
+            case 'schedule':
+                this.showScheduleManager();
+                break;
+            case 'profile':
+                this.showProfileManager();
+                break;
+            case 'tips':
+                this.showTipsManager();
+                break;
+            case 'memo':
+                this.showMemoManager();
+                break;
+            case 'dictionary':
+                this.showDictionary();
+                break;
+            default:
+                this.showNotification('페이지를 준비 중입니다.', 'info');
+        }
+    }
+
+    showDischargeCalculator() {
+        if (!this.userData.enlistmentDate) {
+            this.showEnlistmentDateModal();
+        } else {
+            this.showNotification('전역 계산기 기능을 준비 중입니다.', 'info');
+        }
+    }
+
+    showEnlistmentDateModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>입대일 설정</h3>
+                <p>전역 계산을 위해 입대일을 설정해주세요.</p>
+                <input type="date" id="enlistmentDateInput" required>
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="this.closest('.modal').remove()">취소</button>
+                    <button class="btn-primary" onclick="app.saveEnlistmentDate()">저장</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    saveEnlistmentDate() {
+        const input = document.getElementById('enlistmentDateInput');
+        if (input && input.value) {
+            this.userData.enlistmentDate = input.value;
+            this.saveUserData();
+            this.updateDashboard();
+            document.querySelector('.modal').remove();
+            this.showNotification('입대일이 저장되었습니다.', 'success');
+        }
+    }
+
+    showMemoEditor() {
+        this.showNotification('메모장 기능을 준비 중입니다.', 'info');
+    }
+
+    showScheduleEditor() {
+        this.showNotification('일정 관리 기능을 준비 중입니다.', 'info');
+    }
+
+    showScheduleManager() {
+        this.showNotification('일정 관리 페이지를 준비 중입니다.', 'info');
+    }
+
+    showProfileManager() {
+        this.showNotification('개인 정보 관리 페이지를 준비 중입니다.', 'info');
+    }
+
+    showTipsManager() {
+        this.showNotification('군대 팁 페이지를 준비 중입니다.', 'info');
+    }
+
+    showMemoManager() {
+        this.showNotification('메모장 페이지를 준비 중입니다.', 'info');
+    }
+
+    showDictionary() {
+        this.showNotification('용어 사전 페이지를 준비 중입니다.', 'info');
+    }
+
+    handleKeyboardShortcuts(e) {
         // Ctrl/Cmd + K: 검색
-        if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
-            event.preventDefault();
-            this.openSearch();
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            this.showSearch();
         }
         
         // Ctrl/Cmd + M: 메뉴 토글
-        if ((event.ctrlKey || event.metaKey) && event.key === 'm') {
-            event.preventDefault();
-            if (window.Navigation) {
-                window.Navigation.toggle();
-            }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+            e.preventDefault();
+            const navigation = document.getElementById('navigation');
+            navigation.classList.toggle('active');
         }
         
         // ESC: 메뉴 닫기
-        if (event.key === 'Escape') {
-            if (window.Navigation && window.Navigation.isOpen) {
-                window.Navigation.close();
-            }
+        if (e.key === 'Escape') {
+            const navigation = document.getElementById('navigation');
+            navigation.classList.remove('active');
+            document.body.style.overflow = '';
         }
     }
-    
-    handleOnlineStatus() {
-        Utils.logger.info('Application is online');
-        this.showNotification('온라인 상태로 복구되었습니다', 'success');
-        this.syncOfflineData();
+
+    showSearch() {
+        this.showNotification('검색 기능을 준비 중입니다.', 'info');
     }
-    
-    handleOfflineStatus() {
-        Utils.logger.warn('Application is offline');
-        this.showNotification('오프라인 모드로 전환되었습니다', 'warning');
-    }
-    
-    handleVisibilityChange() {
-        if (document.hidden) {
-            this.handlePageHidden();
-        } else {
-            this.handlePageVisible();
-        }
-    }
-    
-    handlePageHidden() {
-        Utils.logger.info('Page hidden');
-        // 페이지가 숨겨질 때 필요한 작업
-    }
-    
-    handlePageVisible() {
-        Utils.logger.info('Page visible');
-        this.checkForUpdates();
-    }
-    
-    // 신고하기 버튼 처리
-    handleReportButton() {
-        this.showNotification('신고 기능이 준비 중입니다', 'info');
-        
-        // 실제 구현에서는 모달이나 새 페이지로 이동
-        setTimeout(() => {
-            this.openReportModal();
-        }, 1000);
-    }
-    
-    // 뉴스 카드 클릭 처리
-    handleNewsCardClick(card) {
-        Utils.logger.info('News card clicked');
-        this.showNotification('뉴스 상세 페이지로 이동합니다', 'info');
-        
-        // 카드 애니메이션
-        card.animateOut().then(() => {
-            // 실제 구현에서는 뉴스 상세 페이지로 이동
-            this.navigateToPage('news-detail');
-        });
-    }
-    
-    // 액션 카드 클릭 처리
-    handleActionCardClick(card) {
-        Utils.logger.info('Action card clicked');
-        this.showNotification('시스템 상세 페이지로 이동합니다', 'info');
-        
-        // 카드 애니메이션
-        card.animateOut().then(() => {
-            // 실제 구현에서는 시스템 상세 페이지로 이동
-            this.navigateToPage('system-detail');
-        });
-    }
-    
-    // 카드 타입 확인
-    getCardType(cardElement) {
-        if (Utils.hasClass(cardElement, 'news-card')) return 'news';
-        if (Utils.hasClass(cardElement, 'action-card')) return 'action';
-        if (Utils.hasClass(cardElement, 'text-card')) return 'text';
-        return 'unknown';
-    }
-    
-    // 페이지 언어 업데이트
-    updatePageLanguage(language) {
-        // 실제 구현에서는 i18n 라이브러리 사용
-        const translations = this.getTranslations(language);
-        
-        // 텍스트 업데이트
-        this.updatePageTexts(translations);
-        
-        // HTML lang 속성 업데이트
-        document.documentElement.lang = language.toLowerCase();
-        
-        Utils.logger.info(`Page language updated to: ${language}`);
-    }
-    
-    // 번역 데이터 (간단한 예시)
-    getTranslations(language) {
-        const translations = {
-            'KO': {
-                'title': '군대 관리 시스템',
-                'report': '신고하기',
-                'menu': '메뉴',
-                'news': '뉴스 전체보기',
-                'system': '시스템 자세히 보기'
-            },
-            'EN': {
-                'title': 'Military Management System',
-                'report': 'Report',
-                'menu': 'Menu',
-                'news': 'View All News',
-                'system': 'View System Details'
-            }
-        };
-        
-        return translations[language] || translations['KO'];
-    }
-    
-    // 페이지 텍스트 업데이트
-    updatePageTexts(translations) {
-        // 제목 업데이트
-        const title = Utils.$('title');
-        if (title) {
-            title.textContent = translations.title;
-        }
-        
-        // 버튼 텍스트 업데이트
-        const reportBtn = Utils.$('.btn-primary span');
-        if (reportBtn) {
-            reportBtn.textContent = translations.report;
-        }
-        
-        // 메뉴 버튼 텍스트 업데이트
-        const menuBtn = Utils.$('.menu-btn span');
-        if (menuBtn) {
-            menuBtn.textContent = translations.menu;
-        }
-    }
-    
-    // 앱 데이터 로드
-    loadAppData() {
-        // 로컬 스토리지에서 데이터 로드
-        this.appData.settings = Utils.storage.get('appSettings', {});
-        this.appData.user = Utils.storage.get('user', null);
-        this.appData.notifications = Utils.storage.get('notifications', []);
-        
-        Utils.logger.info('App data loaded');
-    }
-    
-    // 사용자 설정 저장
-    saveUserPreference(key, value) {
-        this.appData.settings[key] = value;
-        Utils.storage.set('appSettings', this.appData.settings);
-        Utils.logger.info(`User preference saved: ${key} = ${value}`);
-    }
-    
-    // 애니메이션 초기화
-    initializeAnimations() {
-        // 페이지 로드 애니메이션
-        this.animatePageLoad();
-        
-        // 스크롤 애니메이션
-        this.setupScrollAnimations();
-    }
-    
-    // 페이지 로드 애니메이션
-    animatePageLoad() {
-        const heroSection = Utils.$('.hero-section');
-        const infoCards = Utils.$$('.info-card');
-        
-        if (heroSection) {
-            Utils.animate(heroSection, {
-                opacity: 1,
-                transform: 'translateY(0)'
-            }, 800, 'ease-out');
-        }
-        
-        // 카드들 순차 애니메이션
-        infoCards.forEach((card, index) => {
-            setTimeout(() => {
-                Utils.animate(card, {
-                    opacity: 1,
-                    transform: 'translateY(0)'
-                }, 600, 'ease-out');
-            }, 200 * (index + 1));
-        });
-    }
-    
-    // 스크롤 애니메이션 설정
-    setupScrollAnimations() {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        Utils.addClass(entry.target, 'animate-in');
-                    }
-                });
-            },
-            { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
-        );
-        
-        // 애니메이션 대상 요소들
-        const animatedElements = Utils.$$('.info-card, .hero-section');
-        animatedElements.forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(30px)';
-            observer.observe(el);
-        });
-    }
-    
-    // 서비스 워커 설정 (오프라인 지원)
-    setupServiceWorker() {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(registration => {
-                    Utils.logger.info('Service Worker registered:', registration);
-                })
-                .catch(error => {
-                    Utils.logger.error('Service Worker registration failed:', error);
-                });
-        }
-    }
-    
-    // 오프라인 기능 초기화
-    initializeOfflineCapabilities() {
-        // 오프라인 데이터 저장
-        this.setupOfflineStorage();
-        
-        // 오프라인 상태 표시
-        if (!navigator.onLine) {
-            this.handleOfflineStatus();
-        }
-    }
-    
-    // 오프라인 스토리지 설정
-    setupOfflineStorage() {
-        // 중요한 데이터를 로컬에 저장
-        const offlineData = {
-            lastSync: new Date().toISOString(),
-            version: '1.0.0'
-        };
-        
-        Utils.storage.set('offlineData', offlineData);
-    }
-    
-    // 오프라인 데이터 동기화
-    syncOfflineData() {
-        const offlineData = Utils.storage.get('offlineData');
-        if (offlineData) {
-            Utils.logger.info('Syncing offline data...');
-            // 실제 구현에서는 서버와 동기화
-        }
-    }
-    
-    // 업데이트 확인
-    checkForUpdates() {
-        // 실제 구현에서는 서버에서 업데이트 확인
-        Utils.logger.info('Checking for updates...');
-    }
-    
-    // 환영 메시지 표시
-    showWelcomeMessage() {
-        const isFirstVisit = !Utils.storage.get('hasVisited');
-        if (isFirstVisit) {
-            this.showNotification('군대 관리 시스템에 오신 것을 환영합니다!', 'success');
-            Utils.storage.set('hasVisited', true);
-        }
-    }
-    
-    // 알림 표시
+
     showNotification(message, type = 'info') {
+        const container = document.getElementById('notificationContainer');
+        if (!container) return;
+
         const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
+        notification.className = `notification ${type}`;
+        
+        const icons = {
+            success: '✅',
+            error: '❌',
+            warning: '⚠️',
+            info: 'ℹ️'
+        };
+
         notification.innerHTML = `
+            <div class="notification-icon">${icons[type] || icons.info}</div>
             <div class="notification-content">
-                <span class="notification-message">${message}</span>
-                <button class="notification-close">&times;</button>
+                <div class="notification-title">알림</div>
+                <div class="notification-message">${message}</div>
             </div>
+            <button class="notification-close" onclick="this.parentElement.remove()">×</button>
         `;
-        
-        // 스타일 추가
-        if (!document.querySelector('#notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'notification-styles';
-            style.textContent = `
-                .notification {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: var(--color-card);
-                    border: 1px solid var(--color-border);
-                    border-radius: var(--radius-md);
-                    padding: var(--spacing-md);
-                    box-shadow: var(--shadow-lg);
-                    z-index: var(--z-tooltip);
-                    transform: translateX(100%);
-                    transition: transform 0.3s ease;
-                    max-width: 300px;
-                }
-                
-                .notification.show {
-                    transform: translateX(0);
-                }
-                
-                .notification-content {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    gap: var(--spacing-sm);
-                }
-                
-                .notification-message {
-                    color: var(--color-text-primary);
-                    font-size: var(--font-size-sm);
-                }
-                
-                .notification-close {
-                    background: none;
-                    border: none;
-                    color: var(--color-text-muted);
-                    cursor: pointer;
-                    font-size: var(--font-size-lg);
-                    padding: 0;
-                    width: 20px;
-                    height: 20px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                
-                .notification-close:hover {
-                    color: var(--color-text-primary);
-                }
-                
-                .notification-success {
-                    border-color: #10B981;
-                }
-                
-                .notification-warning {
-                    border-color: #F59E0B;
-                }
-                
-                .notification-error {
-                    border-color: #EF4444;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        document.body.appendChild(notification);
-        
-        // 애니메이션
+
+        container.appendChild(notification);
+
+        // 5초 후 자동 제거
         setTimeout(() => {
-            Utils.addClass(notification, 'show');
-        }, 100);
-        
-        // 닫기 버튼 이벤트
-        const closeBtn = notification.querySelector('.notification-close');
-        Utils.on(closeBtn, 'click', () => {
-            Utils.removeClass(notification, 'show');
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
-        });
-        
-        // 자동 닫기
-        setTimeout(() => {
-            if (notification.parentNode) {
-                Utils.removeClass(notification, 'show');
+            if (notification.parentElement) {
+                notification.classList.add('removing');
                 setTimeout(() => {
-                    notification.remove();
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
                 }, 300);
             }
         }, 5000);
     }
-    
-    // 검색 열기
-    openSearch() {
-        this.showNotification('검색 기능이 준비 중입니다', 'info');
+
+    updateOnlineStatus(isOnline) {
+        const navStatus = document.getElementById('navStatus');
+        if (navStatus) {
+            const status = isOnline ? 
+                this.translations[this.currentLanguage].onlineMode : 
+                this.translations[this.currentLanguage].offlineMode;
+            navStatus.textContent = status;
+        }
+
+        this.showNotification(
+            isOnline ? '인터넷 연결이 복구되었습니다.' : '오프라인 모드로 전환되었습니다.',
+            isOnline ? 'success' : 'warning'
+        );
     }
-    
-    // 신고 모달 열기
-    openReportModal() {
-        this.showNotification('신고 모달이 열렸습니다', 'info');
+
+    checkOnlineStatus() {
+        this.updateOnlineStatus(navigator.onLine);
     }
-    
-    // 페이지 이동
-    navigateToPage(page) {
-        this.currentPage = page;
-        Utils.logger.info(`Navigating to page: ${page}`);
-        
-        // 실제 구현에서는 라우터 사용
-        this.showNotification(`${page} 페이지로 이동합니다`, 'info');
+
+    loadUserData() {
+        const saved = Utils.storage.get('userData');
+        if (saved) {
+            this.userData = { ...this.userData, ...saved };
+        }
+    }
+
+    saveUserData() {
+        Utils.storage.set('userData', this.userData);
+    }
+
+    loadAppData() {
+        const saved = Utils.storage.get('appData');
+        if (saved) {
+            this.appData = { ...this.appData, ...saved };
+        }
+    }
+
+    saveAppData() {
+        this.appData.lastUpdated = new Date().toISOString();
+        Utils.storage.set('appData', this.appData);
+    }
+
+    setupServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => {
+                    console.log('Service Worker 등록 성공:', registration);
+                })
+                .catch(error => {
+                    console.log('Service Worker 등록 실패:', error);
+                });
+        }
     }
 }
 
 // 애플리케이션 초기화
 let app;
 
-if (document.readyState === 'loading') {
-    Utils.on(document, 'DOMContentLoaded', () => {
-        app = new MilitaryManagementApp();
-    });
-} else {
-    app = new MilitaryManagementApp();
-}
+document.addEventListener('DOMContentLoaded', () => {
+    app = new MilitaryDashboardApp();
+    app.init();
+});
 
-// 전역 객체로 노출
+// 전역 접근을 위한 설정
 window.MilitaryApp = app;

@@ -3,129 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>군대 관리 시스템</title>
+    <title>MILBASE - 군대 개인 대시보드</title>
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
-    <!-- 헤더 컴포넌트 -->
+    <!-- Header -->
     <header class="header">
-        <div class="header-container">
-            <div class="header-left">
-                <button class="btn-primary">
-                    <span>신고하기</span>
-                    <svg class="icon-arrow" viewBox="0 0 24 24">
-                        <path d="M7 17l9.2-9.2M17 17V7.8H7.8"/>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="header-center">
-                <div class="social-icons">
-                    <svg class="icon" viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
-                    <svg class="icon" viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
-                    <svg class="icon" viewBox="0 0 24 24">
-                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                    </svg>
-                </div>
-            </div>
-            
-            <div class="header-right">
+        <div class="container">
+            <div class="header-content">
                 <div class="logo">
-                    <div class="logo-rings">
-                        <div class="ring ring-1"></div>
-                        <div class="ring ring-2"></div>
-                        <div class="ring ring-3"></div>
-                    </div>
+                    <span class="logo-icon">🎖️</span>
+                    <span class="logo-text">MILBASE</span>
                 </div>
-                <div class="language-selector">
-                    <span>KO</span>
-                    <span class="separator">/</span>
-                    <span>EN</span>
+                
+                <div class="header-actions">
+                    <button class="btn-icon" id="themeToggle" title="테마 변경">
+                        <span class="icon">🌙</span>
+                    </button>
+                    <button class="btn-icon" id="menuToggle" title="메뉴">
+                        <span class="hamburger">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </span>
+                    </button>
                 </div>
-                <button class="menu-btn">
-                    <span>메뉴</span>
-                    <div class="hamburger">
-                        <span></span>
-                        <span></span>
-                    </div>
-                </button>
             </div>
         </div>
     </header>
 
-    <!-- 메인 콘텐츠 -->
-    <main class="main-content">
-        <div class="hero-section">
-            <h1 class="brand-title">군대</h1>
-            <h2 class="brand-subtitle">관리 시스템</h2>
-            <div class="scroll-indicator">
-                <div class="scroll-line"></div>
-            </div>
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Welcome Section -->
+            <section class="welcome">
+                <h1 class="welcome-title">안녕하세요, <span class="highlight" id="userName">병사</span>님</h1>
+                <p class="welcome-subtitle">군 복무 관리를 위한 개인 대시보드입니다.</p>
+                <div class="welcome-time" id="currentTime"></div>
+            </section>
+
+            <!-- Stats Grid -->
+            <section class="stats">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-content">
+                            <div class="stat-label">복무 일수</div>
+                            <div class="stat-value" id="serviceDays">--</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-content">
+                            <div class="stat-label">전역까지</div>
+                            <div class="stat-value" id="remainingDays">--</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <div class="stat-label">진행률</div>
+                            <div class="stat-value" id="progressPercent">--%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressBar"></div>
+                    </div>
+                    <div class="progress-label">복무 진행률</div>
+                </div>
+            </section>
+
+            <!-- Features Grid -->
+            <section class="features">
+                <h2 class="section-title">주요 기능</h2>
+                <div class="features-grid">
+                    <div class="feature-card" data-feature="calculator">
+                        <div class="feature-icon">⏰</div>
+                        <h3 class="feature-title">전역 계산기</h3>
+                        <p class="feature-desc">정확한 전역일 계산</p>
+                    </div>
+                    <div class="feature-card" data-feature="schedule">
+                        <div class="feature-icon">📋</div>
+                        <h3 class="feature-title">일정 관리</h3>
+                        <p class="feature-desc">휴가 및 훈련 일정</p>
+                    </div>
+                    <div class="feature-card" data-feature="profile">
+                        <div class="feature-icon">👤</div>
+                        <h3 class="feature-title">개인 정보</h3>
+                        <p class="feature-desc">부대 및 계급 정보</p>
+                    </div>
+                    <div class="feature-card" data-feature="memo">
+                        <div class="feature-icon">📝</div>
+                        <h3 class="feature-title">메모장</h3>
+                        <p class="feature-desc">중요 사항 기록</p>
+                    </div>
+                    <div class="feature-card" data-feature="tips">
+                        <div class="feature-icon">💡</div>
+                        <h3 class="feature-title">군생활 팁</h3>
+                        <p class="feature-desc">유용한 정보 모음</p>
+                    </div>
+                    <div class="feature-card" data-feature="dictionary">
+                        <div class="feature-icon">📚</div>
+                        <h3 class="feature-title">용어 사전</h3>
+                        <p class="feature-desc">군사 용어 검색</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="quick-actions">
+                <h2 class="section-title">빠른 실행</h2>
+                <div class="actions-grid">
+                    <button class="action-btn primary" id="quickCalculator">
+                        <span class="action-icon">⏰</span>
+                        전역일 확인
+                    </button>
+                    <button class="action-btn secondary" id="quickMemo">
+                        <span class="action-icon">📝</span>
+                        메모 작성
+                    </button>
+                    <button class="action-btn secondary" id="quickSchedule">
+                        <span class="action-icon">📋</span>
+                        일정 추가
+                    </button>
+                </div>
+            </section>
         </div>
     </main>
 
-    <!-- 정보 섹션 -->
-    <section class="info-section">
-        <div class="info-container">
-            <!-- 뉴스 카드 -->
-            <div class="info-card news-card">
-                <div class="card-image">
-                    <div class="image-placeholder"></div>
-                </div>
-                <div class="card-content">
-                    <h3>새로운 지침이 발표되었습니다</h3>
-                    <p>최신 안전 수칙과 운영 지침이 업데이트되었습니다. 모든 부대원이 숙지해야 할 중요한 내용입니다.</p>
-                    <a href="#" class="link-arrow">
-                        뉴스 전체보기
-                        <svg class="icon-arrow" viewBox="0 0 24 24">
-                            <path d="M7 17l9.2-9.2M17 17V7.8H7.8"/>
-                        </svg>
-                    </a>
-                </div>
-            </div>
-
-            <!-- 설명 텍스트 -->
-            <div class="info-card text-card">
-                <p>군대는 국가의 안전을 지키는 중요한 조직입니다. 모든 구성원의 협력과 헌신이 필요하며, 체계적인 관리 시스템을 통해 효율적인 운영이 가능합니다.</p>
-            </div>
-
-            <!-- 액션 카드 -->
-            <div class="info-card action-card">
-                <h3>군대 관리 시스템</h3>
-                <p>현대적인 디지털 솔루션으로 군대 운영을 더욱 효율적으로 만들어보세요. 실시간 모니터링과 체계적인 관리를 제공합니다.</p>
-                <a href="#" class="link-arrow">
-                    시스템 자세히 보기
-                    <svg class="icon-arrow" viewBox="0 0 24 24">
-                        <path d="M7 17l9.2-9.2M17 17V7.8H7.8"/>
-                    </svg>
-                </a>
-            </div>
+    <!-- Side Menu -->
+    <nav class="sidemenu" id="sideMenu">
+        <div class="sidemenu-header">
+            <h3>메뉴</h3>
+            <button class="btn-icon" id="menuClose">
+                <span class="icon">✕</span>
+            </button>
         </div>
-    </section>
-
-    <!-- 네비게이션 메뉴 (숨김) -->
-    <nav class="navigation" id="navigation">
-        <div class="nav-container">
-            <ul class="nav-list">
-                <li><a href="#dashboard">대시보드</a></li>
-                <li><a href="#personnel">인사 관리</a></li>
-                <li><a href="#equipment">장비 관리</a></li>
-                <li><a href="#training">교육 관리</a></li>
-                <li><a href="#reports">보고서</a></li>
-                <li><a href="#settings">설정</a></li>
+        <div class="sidemenu-content">
+            <ul class="menu-list">
+                <li><a href="#" class="menu-link active">🏠 대시보드</a></li>
+                <li><a href="#" class="menu-link">⏰ 전역 계산기</a></li>
+                <li><a href="#" class="menu-link">📋 일정 관리</a></li>
+                <li><a href="#" class="menu-link">👤 개인 정보</a></li>
+                <li><a href="#" class="menu-link">📝 메모장</a></li>
+                <li><a href="#" class="menu-link">💡 군생활 팁</a></li>
+                <li><a href="#" class="menu-link">📚 용어 사전</a></li>
             </ul>
+            <div class="menu-footer">
+                <div class="app-info">
+                    <div class="app-version">v1.0.0</div>
+                    <div class="app-status" id="connectionStatus">오프라인</div>
+                </div>
+            </div>
         </div>
     </nav>
 
-    <!-- 스크립트 -->
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
     <script src="js/utils.js"></script>
     <script src="js/components.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>

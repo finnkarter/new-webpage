@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전역 계산기 - MILITARY HUB</title>
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="index.html" class="back-btn">
+                    <span class="back-icon">←</span>
+                    <span>뒤로</span>
+                </a>
+            </div>
+            
+            <div class="header-center">
+                <h1 class="page-title">전역 계산기</h1>
+            </div>
+            
+            <div class="header-right">
+                <div class="language-selector" id="languageSelector">
+                    <button class="lang-btn active" data-lang="ko">한국어</button>
+                    <button class="lang-btn" data-lang="en">English</button>
+                </div>
+                <button class="menu-btn" id="menuBtn" aria-label="메뉴 열기">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Calculator Section -->
+        <section class="calculator-section">
+            <div class="container">
+                <div class="calculator-card">
+                    <h2 class="calculator-title">전역일 계산</h2>
+                    <p class="calculator-subtitle">입대일과 군종을 선택하여 정확한 전역일을 계산하세요.</p>
+                    
+                    <form class="calculator-form" id="calculatorForm">
+                        <div class="form-group">
+                            <label for="enlistmentDate">입대일</label>
+                            <input type="date" id="enlistmentDate" name="enlistmentDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="serviceType">군종</label>
+                            <select id="serviceType" name="serviceType" required>
+                                <option value="육군">육군 (18개월)</option>
+                                <option value="해군">해군 (18개월)</option>
+                                <option value="공군">공군 (18개월)</option>
+                                <option value="해병대">해병대 (18개월)</option>
+                                <option value="의무경찰">의무경찰 (21개월)</option>
+                                <option value="의무소방">의무소방 (21개월)</option>
+                                <option value="사회복무">사회복무 (21개월)</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn-primary">
+                            <span class="btn-icon">⏰</span>
+                            전역일 계산하기
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="container">
+                <div class="results-grid">
+                    <!-- 전역일 카드 -->
+                    <div class="result-card discharge-card">
+                        <div class="result-icon">🎯</div>
+                        <h3 class="result-title">전역일</h3>
+                        <div class="result-value" id="dischargeDate">-</div>
+                        <div class="result-subtitle" id="dischargeDays">-</div>
+                    </div>
+
+                    <!-- 복무 일수 카드 -->
+                    <div class="result-card service-card">
+                        <div class="result-icon">📅</div>
+                        <h3 class="result-title">복무 일수</h3>
+                        <div class="result-value" id="serviceDays">-</div>
+                        <div class="result-subtitle">오늘까지</div>
+                    </div>
+
+                    <!-- 남은 일수 카드 -->
+                    <div class="result-card remaining-card">
+                        <div class="result-icon">⏳</div>
+                        <h3 class="result-title">남은 일수</h3>
+                        <div class="result-value" id="remainingDays">-</div>
+                        <div class="result-subtitle">전역까지</div>
+                    </div>
+
+                    <!-- 진행률 카드 -->
+                    <div class="result-card progress-card">
+                        <div class="result-icon">📊</div>
+                        <h3 class="result-title">복무 진행률</h3>
+                        <div class="result-value" id="serviceProgress">-</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Detailed Info Section -->
+        <section class="detailed-info-section" id="detailedInfoSection" style="display: none;">
+            <div class="container">
+                <div class="detailed-info-card">
+                    <h3 class="detailed-info-title">상세 정보</h3>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">입대일:</span>
+                            <span class="info-value" id="detailedEnlistmentDate">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">군종:</span>
+                            <span class="info-value" id="detailedServiceType">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">복무 기간:</span>
+                            <span class="info-value" id="detailedServicePeriod">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">전역일:</span>
+                            <span class="info-value" id="detailedDischargeDate">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">복무 일수:</span>
+                            <span class="info-value" id="detailedServiceDays">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">남은 일수:</span>
+                            <span class="info-value" id="detailedRemainingDays">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tips Section -->
+        <section class="tips-section">
+            <div class="container">
+                <h2 class="section-title">전역 관련 팁</h2>
+                <div class="tips-grid">
+                    <div class="tip-card">
+                        <div class="tip-icon">📋</div>
+                        <h3 class="tip-title">전역 준비</h3>
+                        <p class="tip-content">전역 3개월 전부터 민간복무 준비를 시작하세요. 필요한 서류와 절차를 미리 확인해두면 좋습니다.</p>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">💼</div>
+                        <h3 class="tip-title">취업 준비</h3>
+                        <p class="tip-content">전역 후 진로를 미리 계획하세요. 군경력 인정, 취업 지원 프로그램 등을 활용할 수 있습니다.</p>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">🎓</div>
+                        <h3 class="tip-title">학업 준비</h3>
+                        <p class="tip-content">대학 복학이나 새로운 학업을 계획한다면, 전역 전에 필요한 준비사항을 확인하세요.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Navigation Menu -->
+    <nav class="navigation" id="navigation">
+        <div class="nav-header">
+            <h3 class="nav-title">메뉴</h3>
+            <button class="nav-close" id="navClose" aria-label="메뉴 닫기">
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        <ul class="nav-list">
+            <li class="nav-item">
+                <a href="index.html" class="nav-link">
+                    <span class="nav-icon">🏠</span>
+                    대시보드
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="discharge-calculator.html" class="nav-link active">
+                    <span class="nav-icon">⏰</span>
+                    전역 계산기
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="schedule.html" class="nav-link">
+                    <span class="nav-icon">📋</span>
+                    일정 관리
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="profile.html" class="nav-link">
+                    <span class="nav-icon">👤</span>
+                    개인 정보
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="tips.html" class="nav-link">
+                    <span class="nav-icon">💡</span>
+                    군대 팁
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="memo.html" class="nav-link">
+                    <span class="nav-icon">📝</span>
+                    메모장
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="dictionary.html" class="nav-link">
+                    <span class="nav-icon">📚</span>
+                    용어 사전
+                </a>
+            </li>
+        </ul>
+        <div class="nav-footer">
+            <div class="nav-info">
+                <p class="nav-version">버전 1.0.0</p>
+                <p class="nav-status" id="navStatus">오프라인 모드</p>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/discharge-calculator.js"></script>
+</body>
+</html>
