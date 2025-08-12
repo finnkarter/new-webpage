@@ -7,6 +7,31 @@
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/components.css">
+    <style>
+        /* 강력한 링크 색상 오버라이드 */
+        a, a:link, a:visited, a:hover, a:active {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+        
+        .menu-link, .menu-link:link, .menu-link:visited, .menu-link:hover, .menu-link:active {
+            color: var(--color-text-muted) !important;
+            text-decoration: none !important;
+        }
+        
+        .menu-link.active, .menu-link.active:link, .menu-link.active:visited, .menu-link.active:hover, .menu-link.active:active {
+            color: white !important;
+        }
+        
+        .sidemenu a, .sidemenu a:link, .sidemenu a:visited, .sidemenu a:hover, .sidemenu a:active {
+            color: var(--color-text-muted) !important;
+            text-decoration: none !important;
+        }
+        
+        .sidemenu a.active, .sidemenu a.active:link, .sidemenu a.active:visited, .sidemenu a.active:hover, .sidemenu a.active:active {
+            color: white !important;
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -83,35 +108,25 @@
             <section class="features">
                 <h2 class="section-title">주요 기능</h2>
                 <div class="features-grid">
-                    <div class="feature-card" data-feature="calculator">
+                    <div class="feature-card" onclick="location.href='discharge-calculator.html'">
                         <div class="feature-icon">⏰</div>
                         <h3 class="feature-title">전역 계산기</h3>
                         <p class="feature-desc">정확한 전역일 계산</p>
                     </div>
-                    <div class="feature-card" data-feature="schedule">
-                        <div class="feature-icon">📋</div>
-                        <h3 class="feature-title">일정 관리</h3>
-                        <p class="feature-desc">휴가 및 훈련 일정</p>
-                    </div>
-                    <div class="feature-card" data-feature="profile">
-                        <div class="feature-icon">👤</div>
-                        <h3 class="feature-title">개인 정보</h3>
-                        <p class="feature-desc">부대 및 계급 정보</p>
-                    </div>
-                    <div class="feature-card" data-feature="memo">
+                    <div class="feature-card" onclick="location.href='memo.html'">
                         <div class="feature-icon">📝</div>
                         <h3 class="feature-title">메모장</h3>
                         <p class="feature-desc">중요 사항 기록</p>
                     </div>
-                    <div class="feature-card" data-feature="tips">
-                        <div class="feature-icon">💡</div>
-                        <h3 class="feature-title">군생활 팁</h3>
-                        <p class="feature-desc">유용한 정보 모음</p>
+                    <div class="feature-card" onclick="location.href='games.html'">
+                        <div class="feature-icon">🎮</div>
+                        <h3 class="feature-title">미니게임</h3>
+                        <p class="feature-desc">재미있는 게임 모음</p>
                     </div>
-                    <div class="feature-card" data-feature="dictionary">
-                        <div class="feature-icon">📚</div>
-                        <h3 class="feature-title">용어 사전</h3>
-                        <p class="feature-desc">군사 용어 검색</p>
+                    <div class="feature-card" onclick="location.href='vacation.html'">
+                        <div class="feature-icon">🏖️</div>
+                        <h3 class="feature-title">휴가 관리</h3>
+                        <p class="feature-desc">휴가 계획과 관리</p>
                     </div>
                 </div>
             </section>
@@ -120,18 +135,23 @@
             <section class="quick-actions">
                 <h2 class="section-title">빠른 실행</h2>
                 <div class="actions-grid">
-                    <button class="action-btn primary" id="quickCalculator">
+                    <button class="action-btn primary" onclick="location.href='discharge-calculator.html'">
                         <span class="action-icon">⏰</span>
                         전역일 확인
                     </button>
-                    <button class="action-btn secondary" id="quickMemo">
+                    <button class="action-btn secondary" onclick="location.href='memo.html'">
                         <span class="action-icon">📝</span>
                         메모 작성
                     </button>
-                    <button class="action-btn secondary" id="quickSchedule">
-                        <span class="action-icon">📋</span>
-                        일정 추가
+                    <button class="action-btn secondary" onclick="location.href='games.html'">
+                        <span class="action-icon">🎮</span>
+                        미니게임
                     </button>
+                    <button class="action-btn secondary" onclick="location.href='vacation.html'">
+                        <span class="action-icon">🏖️</span>
+                        휴가 관리
+                    </button>
+
                 </div>
             </section>
         </div>
@@ -147,18 +167,45 @@
         </div>
         <div class="sidemenu-content">
             <ul class="menu-list">
-                <li><a href="#" class="menu-link active">🏠 대시보드</a></li>
-                <li><a href="#" class="menu-link">⏰ 전역 계산기</a></li>
-                <li><a href="#" class="menu-link">📋 일정 관리</a></li>
-                <li><a href="#" class="menu-link">👤 개인 정보</a></li>
-                <li><a href="#" class="menu-link">📝 메모장</a></li>
-                <li><a href="#" class="menu-link">💡 군생활 팁</a></li>
-                <li><a href="#" class="menu-link">📚 용어 사전</a></li>
+                <li>
+                    <a href="index.html" class="menu-link active">
+                        <span class="menu-icon">🏠</span>
+                        <span class="menu-text">대시보드</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="discharge-calculator.html" class="menu-link">
+                        <span class="menu-icon">⏰</span>
+                        <span class="menu-text">전역 계산기</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="memo.html" class="menu-link">
+                        <span class="menu-icon">📝</span>
+                        <span class="menu-text">메모장</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="games.html" class="menu-link">
+                        <span class="menu-icon">🎮</span>
+                        <span class="menu-text">미니게임</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="vacation.html" class="menu-link">
+                        <span class="menu-icon">🏖️</span>
+                        <span class="menu-text">휴가관리</span>
+                    </a>
+                </li>
+
             </ul>
             <div class="menu-footer">
                 <div class="app-info">
-                    <div class="app-version">v1.0.0</div>
-                    <div class="app-status" id="connectionStatus">오프라인</div>
+                    <div class="app-version">MILBASE v1.2.0</div>
+                    <div class="app-status" id="connectionStatus" data-status="offline">
+                        <span class="status-dot" aria-hidden="true" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--warning);margin-right:6px;"></span>
+                        <span>오프라인 모드</span>
+                    </div>
                 </div>
             </div>
         </div>

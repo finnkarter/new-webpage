@@ -52,24 +52,35 @@ class DischargeCalculator {
             });
         }
 
-        // 메뉴 버튼
+        // 사이드 메뉴 토글
         const menuBtn = document.getElementById('menuBtn');
-        const navClose = document.getElementById('navClose');
-        const navigation = document.getElementById('navigation');
-
-        if (menuBtn) {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuClose = document.getElementById('menuClose');
+        
+        if (menuBtn && sideMenu) {
             menuBtn.addEventListener('click', () => {
-                navigation.classList.add('active');
-                document.body.style.overflow = 'hidden';
+                sideMenu.classList.add('active');
+            });
+        }
+        
+        if (menuClose && sideMenu) {
+            menuClose.addEventListener('click', () => {
+                sideMenu.classList.remove('active');
             });
         }
 
-        if (navClose) {
-            navClose.addEventListener('click', () => {
-                navigation.classList.remove('active');
-                document.body.style.overflow = '';
-            });
-        }
+        // 사이드 메뉴 외부 클릭시 닫기
+        document.addEventListener('click', (e) => {
+            if (sideMenu && sideMenu.classList.contains('active')) {
+                if (!sideMenu.contains(e.target) && !menuBtn.contains(e.target)) {
+                    sideMenu.classList.remove('active');
+                }
+            }
+        });
+
+
+
+
 
         // 입력 필드 변경 감지
         const enlistmentDateInput = document.getElementById('enlistmentDate');

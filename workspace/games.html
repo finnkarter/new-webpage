@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미니게임 - MILBASE</title>
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+    <style>
+        /* 모든 링크 보라색 문제 완전 해결 */
+        a, a:link, a:visited, a:hover, a:active {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+        
+        .menu-link, .menu-link:link, .menu-link:visited, .menu-link:hover, .menu-link:active,
+        .nav-link, .nav-link:link, .nav-link:visited, .nav-link:hover, .nav-link:active {
+            color: var(--color-text-muted) !important;
+            text-decoration: none !important;
+        }
+        
+        .menu-link.active, .menu-link.active:link, .menu-link.active:visited, .menu-link.active:hover, .menu-link.active:active,
+        .nav-link.active, .nav-link.active:link, .nav-link.active:visited, .nav-link.active:hover, .nav-link.active:active {
+            color: white !important;
+        }
+    </style>
+    <style>
+        .games-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-6);
+        }
+        
+        .games-header {
+            text-align: center;
+            margin-bottom: var(--space-8);
+        }
+        
+        .games-subtitle {
+            color: var(--color-text-muted);
+            margin-top: var(--space-2);
+            font-size: var(--text-lg);
+        }
+        
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-6);
+            margin-bottom: var(--space-8);
+        }
+        
+        .game-card {
+            background: var(--gradient-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--space-6);
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-bounce);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.15), transparent);
+            transition: left var(--transition-slow);
+        }
+        
+        .game-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--gradient-glow);
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+            pointer-events: none;
+        }
+        
+        .game-card:hover::before {
+            left: 100%;
+        }
+        
+        .game-card:hover::after {
+            opacity: 0.08;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-6px) scale(1.03);
+            box-shadow: var(--shadow-2xl);
+            border-color: var(--primary-400);
+        }
+        
+        .game-icon {
+            font-size: 4rem;
+            margin-bottom: var(--space-4);
+            display: block;
+        }
+        
+        .game-title {
+            font-size: var(--text-xl);
+            font-weight: var(--weight-semibold);
+            margin-bottom: var(--space-2);
+            color: var(--color-text);
+        }
+        
+        .game-description {
+            color: var(--color-text-muted);
+            line-height: var(--leading-relaxed);
+            margin-bottom: var(--space-4);
+        }
+        
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: var(--text-sm);
+            color: var(--color-text-subtle);
+        }
+        
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--color-text-muted);
+            text-decoration: none;
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-lg);
+            transition: all var(--transition-fast);
+        }
+        
+        .back-btn:hover {
+            background: var(--color-card);
+            color: var(--color-text);
+        }
+        
+        .game-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: var(--z-modal);
+            padding: var(--space-4);
+        }
+        
+        .game-modal-content {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-xl);
+            padding: var(--space-6);
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .game-close {
+            position: absolute;
+            top: var(--space-4);
+            right: var(--space-4);
+            background: var(--color-card);
+            border: 1px solid var(--color-border);
+            color: var(--color-text-muted);
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        
+        .game-close:hover {
+            background: var(--color-border);
+            color: var(--color-text);
+        }
+        
+        .game-area {
+            margin: var(--space-4) 0;
+            padding: var(--space-4);
+            background: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            text-align: center;
+        }
+        
+        .game-input {
+            margin: var(--space-2);
+            text-align: center;
+        }
+        
+        .game-button {
+            margin: var(--space-2);
+        }
+        
+        .game-history {
+            margin-top: var(--space-4);
+            padding: var(--space-4);
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .game-result {
+            margin: var(--space-2) 0;
+            padding: var(--space-2);
+            border-radius: var(--radius-md);
+            font-size: var(--text-sm);
+        }
+        
+        .game-result.win {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+        
+        .game-result.lose {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+        
+        .game-result.draw {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+        
+        .rps-buttons {
+            display: flex;
+            gap: var(--space-4);
+            justify-content: center;
+            margin: var(--space-4) 0;
+        }
+        
+        .rps-button {
+            font-size: 3rem;
+        }
+        
+        /* 퀴즈 옵션 스타일은 components.css에서 통일 관리 */
+        
+        @media (max-width: 768px) {
+            .games-container {
+                padding: var(--space-4);
+            }
+            
+            .games-grid {
+                grid-template-columns: 1fr;
+                gap: var(--space-4);
+            }
+            
+            .game-modal-content {
+                margin: var(--space-2);
+                padding: var(--space-4);
+            }
+            
+            .rps-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="index.html" class="back-btn">
+                        <span>←</span>
+                        <span>뒤로</span>
+                    </a>
+                </div>
+                
+                <div class="logo">
+                    <span class="logo-icon">🎮</span>
+                    <span class="logo-text">미니게임</span>
+                </div>
+                
+                <div class="header-actions">
+                    <button class="btn-icon" id="themeToggle" title="테마 변경">
+                        <span class="icon">🌙</span>
+                    </button>
+                    <button class="btn-icon" id="menuToggle" title="메뉴">
+                        <span class="hamburger">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="games-container">
+            <!-- Games Header -->
+            <div class="games-header">
+                <h1 class="section-title">🎮 미니게임 모음</h1>
+                <p class="games-subtitle">군 생활의 스트레스를 날려버릴 재미있는 게임들</p>
+            </div>
+
+            <!-- 게임 통계 섹션 -->
+            <div class="stats-section" style="margin-bottom: 3rem;">
+                <h2 class="section-title" style="text-align: center; margin-bottom: 2rem;">📊 게임 통계</h2>
+                
+                <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="stat-card" style="background: var(--gradient-card); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius-lg); padding: 1.5rem; text-align: center; transition: all var(--transition-smooth);">
+                        <div class="stat-icon" style="font-size: 2rem; margin-bottom: 0.5rem; animation: float 3s ease-in-out infinite;">🕹️</div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="totalGamesPlayed" style="font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem;">0</div>
+                            <div class="stat-label" style="font-size: 0.875rem; color: var(--color-text-secondary);">총 게임 횟수</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card" style="background: var(--gradient-card); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius-lg); padding: 1.5rem; text-align: center; transition: all var(--transition-smooth);">
+                        <div class="stat-icon" style="font-size: 2rem; margin-bottom: 0.5rem; animation: float 3s ease-in-out infinite; animation-delay: 0.5s;">⏱️</div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="totalPlayTime" style="font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem;">0분</div>
+                            <div class="stat-label" style="font-size: 0.875rem; color: var(--color-text-secondary);">총 플레이 시간</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card" style="background: var(--gradient-card); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius-lg); padding: 1.5rem; text-align: center; transition: all var(--transition-smooth);">
+                        <div class="stat-icon" style="font-size: 2rem; margin-bottom: 0.5rem; animation: float 3s ease-in-out infinite; animation-delay: 1s;">🏆</div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="highestScore" style="font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem;">0</div>
+                            <div class="stat-label" style="font-size: 0.875rem; color: var(--color-text-secondary);">최고 점수</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card" style="background: var(--gradient-card); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius-lg); padding: 1.5rem; text-align: center; transition: all var(--transition-smooth);">
+                        <div class="stat-icon" style="font-size: 2rem; margin-bottom: 0.5rem; animation: float 3s ease-in-out infinite; animation-delay: 1.5s;">🔥</div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="currentStreak" style="font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem;">0일</div>
+                            <div class="stat-label" style="font-size: 0.875rem; color: var(--color-text-secondary);">연속 플레이</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 게임별 상세 통계 -->
+                <div class="detailed-stats" style="background: var(--gradient-card); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius-lg); padding: 2rem; margin-bottom: 2rem;">
+                    <h3 style="color: var(--primary); margin-bottom: 1.5rem; text-align: center;">🎯 게임별 상세 기록</h3>
+                    <div class="game-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                        <div class="game-stat-item" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius); padding: 1.5rem;">
+                            <div class="game-stat-header" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                                <span style="font-size: 1.5rem;">⚾</span>
+                                <span style="font-weight: 600; color: var(--color-text);">숫자야구</span>
+                            </div>
+                            <div class="game-stat-details" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                    <span style="color: var(--color-text-secondary);">플레이 횟수:</span>
+                                    <span id="baseballPlayCount" style="color: var(--color-text); font-weight: 600;">0회</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                    <span style="color: var(--color-text-secondary);">최소 시도:</span>
+                                    <span id="baseballBestTries" style="color: var(--color-text); font-weight: 600;">-</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                    <span style="color: var(--color-text-secondary);">승률:</span>
+                                    <span id="baseballWinRate" style="color: var(--color-text); font-weight: 600;">0%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="game-stat-item" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius); padding: 1.5rem;">
+                            <div class="game-stat-header" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                                <span style="font-size: 1.5rem;">✂️</span>
+                                <span style="font-weight: 600; color: var(--color-text);">가위바위보</span>
+                            </div>
+                            <div class="game-stat-details" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                    <span style="color: var(--color-text-secondary);">플레이 횟수:</span>
+                                    <span id="rpsPlayCount" style="color: var(--color-text); font-weight: 600;">0회</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                    <span style="color: var(--color-text-secondary);">승률:</span>
+                                    <span id="rpsWinRate" style="color: var(--color-text); font-weight: 600;">0%</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                    <span style="color: var(--color-text-secondary);">최대 연승:</span>
+                                    <span id="rpsMaxStreak" style="color: var(--color-text); font-weight: 600;">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="game-stat-item" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius); padding: 1.5rem;">
+                            <div class="game-stat-header" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                                <span style="font-size: 1.5rem;">🧠</span>
+                                <span style="font-weight: 600; color: var(--color-text);">군사상식 퀴즈</span>
+                            </div>
+                            <div class="game-stat-details" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                    <span style="color: var(--color-text-secondary);">플레이 횟수:</span>
+                                    <span id="quizPlayCount" style="color: var(--color-text); font-weight: 600;">0회</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                    <span style="color: var(--color-text-secondary);">정답률:</span>
+                                    <span id="quizAccuracy" style="color: var(--color-text); font-weight: 600;">0%</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                    <span style="color: var(--color-text-secondary);">최고 점수:</span>
+                                    <span id="quizHighScore" style="color: var(--color-text); font-weight: 600;">0점</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="game-stat-item" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius); padding: 1.5rem;">
+                            <div class="game-stat-header" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                                <span style="font-size: 1.5rem;">🃏</span>
+                                <span style="font-weight: 600; color: var(--color-text);">기억력 게임</span>
+                            </div>
+                            <div class="game-stat-details" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                    <span style="color: var(--color-text-secondary);">플레이 횟수:</span>
+                                    <span id="memoryPlayCount" style="color: var(--color-text); font-weight: 600;">0회</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                    <span style="color: var(--color-text-secondary);">최고 레벨:</span>
+                                    <span id="memoryHighLevel" style="color: var(--color-text); font-weight: 600;">0</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                                    <span style="color: var(--color-text-secondary);">정확도:</span>
+                                    <span id="memoryAccuracy" style="color: var(--color-text); font-weight: 600;">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 성취도 배지 -->
+                <div class="achievements-section" style="background: var(--gradient-card); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius-lg); padding: 2rem;">
+                    <h3 style="color: var(--primary); margin-bottom: 1.5rem; text-align: center;">🏅 성취도 배지</h3>
+                    <div class="achievements-grid" id="achievementsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
+                        <!-- JavaScript로 동적 생성 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Games Grid -->
+            <div class="games-grid">
+                <div class="game-card" data-game="reaction">
+                    <div class="game-icon">⚡</div>
+                    <div class="game-title">반응속도 테스트</div>
+                    <div class="game-description">
+                        신호가 뜨면 즉시 클릭하세요!<br>
+                        최고의 기록에 도전!
+                    </div>
+                    <div class="game-stats">
+                        <span>⏱️ 스피드</span>
+                        <span>⭐ 4.6</span>
+                    </div>
+                </div>
+
+                <div class="game-card" data-game="game2048">
+                    <div class="game-icon">🔳</div>
+                    <div class="game-title">2048</div>
+                    <div class="game-description">
+                        같은 숫자를 합쳐 2048 타일을 만들어보세요!<br>
+                        방향키로 이동합니다.
+                    </div>
+                    <div class="game-stats">
+                        <span>🧩 퍼즐</span>
+                        <span>⭐ 4.8</span>
+                    </div>
+                </div>
+
+                <div class="game-card" data-game="baseball">
+                    <div class="game-icon">⚾</div>
+                    <div class="game-title">숫자야구</div>
+                    <div class="game-description">
+                        3자리 숫자를 맞추는 추리 게임입니다.<br>
+                        스트라이크와 볼의 힌트를 보고 숫자를 맞춰보세요!
+                    </div>
+                    <div class="game-stats">
+                        <span>🎯 추리게임</span>
+                        <span>⭐ 4.5</span>
+                    </div>
+                </div>
+
+                <div class="game-card" data-game="rps">
+                    <div class="game-icon">✂️</div>
+                    <div class="game-title">가위바위보</div>
+                    <div class="game-description">
+                        컴퓨터와 가위바위보 대결!<br>
+                        연승 기록에 도전해보세요.
+                    </div>
+                    <div class="game-stats">
+                        <span>👊 액션게임</span>
+                        <span>⭐ 4.2</span>
+                    </div>
+                </div>
+
+                <div class="game-card" data-game="quiz">
+                    <div class="game-icon">🧠</div>
+                    <div class="game-title">군사상식 퀴즈</div>
+                    <div class="game-description">
+                        군대 관련 상식과 일반상식을 테스트해보세요.<br>
+                        얼마나 많이 알고 있을까요?
+                    </div>
+                    <div class="game-stats">
+                        <span>📚 교육게임</span>
+                        <span>⭐ 4.7</span>
+                    </div>
+                </div>
+
+                <div class="game-card" data-game="memory">
+                    <div class="game-icon">🃏</div>
+                    <div class="game-title">기억력 게임</div>
+                    <div class="game-description">
+                        카드를 뒤집어 같은 그림을 찾는 게임입니다.<br>
+                        기억력과 집중력을 향상시켜보세요!
+                    </div>
+                    <div class="game-stats">
+                        <span>🧩 퍼즐게임</span>
+                        <span>⭐ 4.3</span>
+                    </div>
+                </div>
+
+                <div class="game-card" data-game="wordchain">
+                    <div class="game-icon">🔤</div>
+                    <div class="game-title">끝말잇기</div>
+                    <div class="game-description">
+                        컴퓨터와 끝말잇기 대결!<br>
+                        다양한 단어를 알고 있는지 테스트해보세요.
+                    </div>
+                    <div class="game-stats">
+                        <span>📝 언어게임</span>
+                        <span>⭐ 4.1</span>
+                    </div>
+                </div>
+
+                <div class="game-card" data-game="calculator">
+                    <div class="game-icon">🔢</div>
+                    <div class="game-title">계산 게임</div>
+                    <div class="game-description">
+                        빠른 계산 능력을 테스트하는 게임입니다.<br>
+                        시간 내에 정답을 맞춰보세요!
+                    </div>
+                    <div class="game-stats">
+                        <span>🧮 수학게임</span>
+                        <span>⭐ 4.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Side Menu -->
+    <nav class="sidemenu" id="sideMenu">
+        <div class="sidemenu-header">
+            <h3>메뉴</h3>
+            <button class="btn-icon" id="menuClose">
+                <span class="icon">✕</span>
+            </button>
+        </div>
+        <div class="sidemenu-content">
+            <ul class="menu-list">
+                <li>
+                    <a href="index.html" class="menu-link">
+                        <span class="menu-icon">🏠</span>
+                        <span class="menu-text">대시보드</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="discharge-calculator.html" class="menu-link">
+                        <span class="menu-icon">⏰</span>
+                        <span class="menu-text">전역 계산기</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="memo.html" class="menu-link">
+                        <span class="menu-icon">📝</span>
+                        <span class="menu-text">메모장</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="games.html" class="menu-link active">
+                        <span class="menu-icon">🎮</span>
+                        <span class="menu-text">미니게임</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="vacation.html" class="menu-link">
+                        <span class="menu-icon">🏖️</span>
+                        <span class="menu-text">휴가관리</span>
+                    </a>
+                </li>
+
+            </ul>
+            <div class="menu-footer">
+                <div class="app-info">
+                    <div class="app-version">MILBASE v1.2.0</div>
+                    <div class="app-status" id="connectionStatus" data-status="offline">
+                        <span class="status-dot" aria-hidden="true" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--warning);margin-right:6px;"></span>
+                        <span>오프라인 모드</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/games.js"></script>
+</body>
+</html>

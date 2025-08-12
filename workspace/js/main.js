@@ -85,24 +85,31 @@ class MilitaryDashboardApp {
             });
         }
 
-        // 메뉴 버튼
-        const menuBtn = document.getElementById('menuBtn');
-        const navClose = document.getElementById('navClose');
-        const navigation = document.getElementById('navigation');
-
-        if (menuBtn) {
-            menuBtn.addEventListener('click', () => {
-                navigation.classList.add('active');
-                document.body.style.overflow = 'hidden';
+        // 사이드 메뉴 토글
+        const menuToggle = document.getElementById('menuToggle');
+        const sideMenu = document.getElementById('sideMenu');
+        const menuClose = document.getElementById('menuClose');
+        
+        if (menuToggle && sideMenu) {
+            menuToggle.addEventListener('click', () => {
+                sideMenu.classList.add('active');
+            });
+        }
+        
+        if (menuClose && sideMenu) {
+            menuClose.addEventListener('click', () => {
+                sideMenu.classList.remove('active');
             });
         }
 
-        if (navClose) {
-            navClose.addEventListener('click', () => {
-                navigation.classList.remove('active');
-                document.body.style.overflow = '';
-            });
-        }
+        // 사이드 메뉴 외부 클릭시 닫기
+        document.addEventListener('click', (e) => {
+            if (sideMenu && sideMenu.classList.contains('active')) {
+                if (!sideMenu.contains(e.target) && menuToggle && !menuToggle.contains(e.target)) {
+                    sideMenu.classList.remove('active');
+                }
+            }
+        });
 
         // 기능 카드 클릭
         const featureCards = document.querySelectorAll('.feature-card');
